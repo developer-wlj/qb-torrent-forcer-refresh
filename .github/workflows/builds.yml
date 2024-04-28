@@ -1,0 +1,30 @@
+name: GraalVM Native Image builds
+on: [push, pull_request]
+jobs:
+  build:
+    name: qbRefresh on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+#        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '17'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build
+        run: |
+          cd target
+          native-image "-H:ReflectionConfigurationFiles=reflect-config.json" "-H:+ReportExceptionStackTraces" "-Dfile.encoding=GBK" "-jar" "qbRefresh.jar" "-o" "qbRefresh"
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: qbRefresh-${{ matrix.os }}
+          path: ./target
